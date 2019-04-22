@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use DB;
 use App\Url;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Mail;
@@ -17,12 +18,12 @@ class UrlController extends Controller
      * @param  integer
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function index($shorten_url)
+    public function index($details_url)
     {
-        dd(md5("UDMx"));
-        $url = Url::where('shorten_url', $shorten_url)->first();
-        if ($url)
+        $url = Url::where('details_url', $details_url)->first();
+        if ($url) {
             return view('details', compact('url'));
+        }
         else
             return Redirect::to('/');
     }
@@ -120,11 +121,15 @@ class UrlController extends Controller
      * @param integer $shorten_url
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function redirection($details_url)
+    public function redirection($shorten_url)
     {
-        $url = Url::where('details_url', $details_url)->first();
+        $url = Url::where('shorten_url', $shorten_url)->first();
         if ($url) {
             $url->overall_visits++;
+            if (!Cookie::get($shorten_url)) {
+                $url->unique_visits++;
+                Cookie::queue($shorten_url, true, 60 * 24 * 30 * 12);
+            }
             $url->save();
             return Redirect::to($url->large_url);
         }

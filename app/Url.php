@@ -13,6 +13,7 @@ class Url extends Model
 
     //protected $fillable = ['large_url', 'shorten_url'];
 
+
     /**
      * @param integer
      * @return string
