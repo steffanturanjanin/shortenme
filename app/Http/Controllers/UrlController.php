@@ -19,8 +19,8 @@ class UrlController extends Controller
      */
     public function index($shorten_url)
     {
-        $id = Url::decode($shorten_url);
-        $url = Url::find($id);
+        dd(md5("UDMx"));
+        $url = Url::where('shorten_url', $shorten_url)->first();
         if ($url)
             return view('details', compact('url'));
         else
@@ -46,32 +46,28 @@ class UrlController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-           'url' => 'required',
-           'email' => 'nullable'
+           'url' => 'required|url',
+           'email' => 'nullable|email'
         ]);
 
-        $existingUrl = Url::where('large_url', $request->url)->first();
+        $url = new Url;
+        $url->large_url = $request->url;
+        $url->overall_visits = 0;
+        $url->unique_visits = 0;
 
-        if ($existingUrl) {
-            if($request->email)
-                Mail::to($request->email)->send(new UrlGenerated($existingUrl));
-            $existingUrl->count = 0;
-            $existingUrl->save();
-            return redirect('details/' . $existingUrl->shorten_url);
-        }
-        else
+        while (true)
         {
-            $shorten_url = Url::encode(DB::table('urls')->max('id') + 1);
-            $url = new Url;
-            $url->large_url = $request->url;
-            $url->shorten_url = $shorten_url;
-            $url->count = 0;
-            $url->save();
+            $shorten_url = Url::generateRandomString(4);
 
-            if($request->email)
-                Mail::to($request->email)->send(new UrlGenerated($url));
+            if (!Url::where('shorten_url', $shorten_url)->first()) {
+                $url->shorten_url = $shorten_url;
+                $url->details_url = md5($shorten_url);
+                $url->save();
+                if($request->email)
+                    Mail::to($request->email)->send(new UrlGenerated($url));
 
-            return redirect('details/'.$shorten_url);
+                return redirect('details/'.$url->details_url);
+            }
         }
     }
 
@@ -124,12 +120,11 @@ class UrlController extends Controller
      * @param integer $shorten_url
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function redirection($shorten_url)
+    public function redirection($details_url)
     {
-        $id = Url::decode($shorten_url);
-        $url = Url::find($id);
+        $url = Url::where('details_url', $details_url)->first();
         if ($url) {
-            $url->count++;
+            $url->overall_visits++;
             $url->save();
             return Redirect::to($url->large_url);
         }
