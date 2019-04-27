@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use DB;
 use App\Url;
+use App\Visit;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\UrlGenerated;
+use Illuminate\Support\Str;
 
 class UrlController extends Controller
 {
@@ -21,21 +23,12 @@ class UrlController extends Controller
     public function index($details_url)
     {
         $url = Url::where('details_url', $details_url)->first();
+        dd($url->visits);
         if ($url) {
             return view('details', compact('url'));
         }
         else
             return Redirect::to('/');
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        //
     }
 
     /**
@@ -59,62 +52,18 @@ class UrlController extends Controller
         while (true)
         {
             $shorten_url = Url::generateRandomString(4);
+            $details_url = $shorten_url . Url::generateRandomString(16);
 
             if (!Url::where('shorten_url', $shorten_url)->first()) {
                 $url->shorten_url = $shorten_url;
-                $url->details_url = md5($shorten_url);
+                $url->details_url = $details_url;
                 $url->save();
-                if($request->email)
+                if ($request->email)
                     Mail::to($request->email)->send(new UrlGenerated($url));
 
-                return redirect('details/'.$url->details_url);
+                return redirect()->route('details', $url->details_url);
             }
         }
-    }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Url  $url
-     * @return \Illuminate\Http\Response
-     */
-    public function show(Url $url)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Url  $url
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(Url $url)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Url  $url
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, Url $url)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Url  $url
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(Url $url)
-    {
-        //
     }
 
     /**
@@ -124,16 +73,46 @@ class UrlController extends Controller
     public function redirection($shorten_url)
     {
         $url = Url::where('shorten_url', $shorten_url)->first();
-        if ($url) {
+        if ($url)
+        {
             $url->overall_visits++;
-            if (!Cookie::get($shorten_url)) {
+            if (!Cookie::get('shortenme'))
+            {
                 $url->unique_visits++;
-                Cookie::queue($shorten_url, true, 60 * 24 * 30 * 12);
+                $generated = false;
+                while (!$generated)
+                {
+                    $cookie = Str::random(32);
+                    if (!Visit::where('cookie', $cookie)->first())
+                    {
+                        $visit = new Visit;
+                        $visit->url_id = $url->id;
+                        $visit->cookie = $cookie;
+                        $visit->save();
+
+                        $generated = true;
+                        Cookie::queue('shortenme', $cookie, 60 * 24 * 30 * 12);
+                    }
+                }
+            }
+            else
+            {
+                if (!Visit::where('url_id', $url->id)->where('cookie', Cookie::get('shortenme'))->first())
+                {
+                    $url->unique_visits++;
+
+                    $visit = new Visit;
+                    $visit->url_id = $url->id;
+                    $visit->cookie = Cookie::get('shortenme');
+                    $visit->save();
+                }
             }
             $url->save();
             return Redirect::to($url->large_url);
         }
         else
-            return Redirect::to('/');
+        {
+            return redirect()->route('home');
+        }
     }
 }
