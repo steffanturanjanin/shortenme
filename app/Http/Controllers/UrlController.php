@@ -23,7 +23,6 @@ class UrlController extends Controller
     public function index($details_url)
     {
         $url = Url::where('details_url', $details_url)->first();
-        dd($url->visits);
         if ($url) {
             return view('details', compact('url'));
         }
@@ -44,7 +43,7 @@ class UrlController extends Controller
            'email' => 'nullable|email'
         ]);
 
-        $url = new Url;
+       /* $url = new Url;
         $url->large_url = $request->url;
         $url->overall_visits = 0;
         $url->unique_visits = 0;
@@ -63,7 +62,16 @@ class UrlController extends Controller
 
                 return redirect()->route('details', $url->details_url);
             }
-        }
+        }*/
+
+       $url =  Url::buildDefaultFromRequest($request);
+       while (true)
+       {
+           if (Url::generateUrls($url, $request))
+           {
+               return redirect()->route('details', $url->details_url);
+           }
+       }
     }
 
     /**

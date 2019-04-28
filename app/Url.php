@@ -3,6 +3,9 @@
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\UrlGenerated;
 
 /**
  * App\Url
@@ -38,27 +41,49 @@ class Url extends Model
 
     //protected $fillable = ['large_url', 'shorten_url'];
 
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
     public function visits()
     {
         return $this->hasMany('App\Visit');
     }
 
-
     /**
-     * @param integer
-     * @return string
+     * @param Request $request
+     * @return Url
      */
-    public static function encode($number) {
-        return strtr(rtrim(base64_encode(pack('i', $number)), '='), '+/', '-_');
+    public static function buildDefaultFromRequest(Request $request)
+    {
+        $url = new Url;
+        $url->large_url = $request->url;
+        $url->overall_visits = 0;
+        $url->unique_visits = 0;
+
+        return $url;
     }
 
     /**
-     * @param string
-     * @return integer
+     * @param Url $url
+     * @param Request $request
+     * @return bool
      */
-    public static function decode($base64) {
-        $number = unpack('i', base64_decode(str_pad(strtr($base64, '-_', '+/'), strlen($base64) % 4, '=')));
-        return $number[1];
+    public static function generateUrls(Url &$url, Request $request)
+    {
+        $shorten_url = Self::generateRandomString(4);
+        $details_url = $shorten_url . Self::generateRandomString(16);
+
+        if (!Url::where('shorten_url', $shorten_url)->first()) {
+            $url->shorten_url = $shorten_url;
+            $url->details_url = $details_url;
+            $url->save();
+            if ($request->email) {
+                Mail::to($request->email)->send(new UrlGenerated($url));
+            }
+            return true;
+        }
+
+        return false;
     }
 
     /**
