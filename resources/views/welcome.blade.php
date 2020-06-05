@@ -4,16 +4,16 @@
 
     <h1 class="font-weight-light">Shorten Your URL</h1>
     <p class="lead">Fill in the form to shorten your url and share it everywhere across the web</p>
-    <form method="POST" action="/url">
+    <form method="POST" action="{{ route('urls.store') }}">
         @csrf
         <div class="container col-md-10">
             @if(!empty($errors->get('url')))
                 <div class="alert alert-danger">
                         @foreach($errors->get('url') as $error)
-                           <p style="text-align: left"> {{$error}} </p>
+                           <p style="text-align: left"> {{ $error }} </p>
                         @endforeach
                         @foreach($errors->get('email') as $error)
-                            <p style="text-align: left"> {{$error}} </p>
+                            <p style="text-align: left"> {{ $error }} </p>
                         @endforeach
                 </div>
             @endif

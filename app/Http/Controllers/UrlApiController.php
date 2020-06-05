@@ -5,35 +5,34 @@ namespace App\Http\Controllers;
 use App\Http\Resources\UrlResource;
 use Illuminate\Http\Request;
 use App\Url;
+use Illuminate\Support\Facades\Validator;
 
 class UrlApiController extends Controller
 {
     /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function index()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return UrlResource
+     * @param Request $request
+     * @return UrlResource|\Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
-        $url =  Url::buildDefaultFromRequest($request);
-        while (true)
+        $validator = Validator::make($request->all(), [
+            'url' => 'required|url',
+            'email' => 'nullable|email'
+        ]);
+
+        if ($validator->fails())
         {
-            if (Url::generateUrls($url, $request))
-            {
-                return new UrlResource($url);
-            }
+            return response()->json($validator->errors(), 409);
         }
+
+        $url =  Url::buildDefaultFromRequest($request);
+
+        do {
+            $generated = Url::generateUrls($url, $request);
+        } while(!$generated);
+
+        return new UrlResource($url);
+
     }
 
     /**
@@ -45,37 +44,11 @@ class UrlApiController extends Controller
     public function show($details_url)
     {
         $url = Url::where('details_url', $details_url)->first();
-        if ($url)
-        {
-            return new UrlResource($url);
-        }
-        else
-        {
+
+        if (!$url) {
             return response()->json("Resource not found", 404);
         }
 
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
-    {
-        //
+        return new UrlResource($url);
     }
 }

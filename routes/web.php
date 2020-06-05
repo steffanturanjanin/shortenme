@@ -15,7 +15,7 @@ Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
-Route::get('/{shorten_url}', 'UrlController@redirection')->name('redirection');
-Route::post('/url', 'UrlController@store')->name('store');
-Route::get('/details/{shorten_url}', 'UrlController@index')->name('details');
+Route::get('/{shorten_url}', 'UrlController@redirection')->name('urls.redirection');
+Route::post('/url', 'UrlController@store')->name('urls.store');
+Route::get('/details/{shorten_url}', 'UrlController@index')->name('urls.index');
 

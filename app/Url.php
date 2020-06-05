@@ -34,13 +34,6 @@ use App\Mail\UrlGenerated;
  */
 class Url extends Model
 {
-   /* public $id;
-    public $large_url;
-    public $shorten_url;
-    public $count;*/
-
-    //protected $fillable = ['large_url', 'shorten_url'];
-
     /**
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
@@ -77,9 +70,11 @@ class Url extends Model
             $url->shorten_url = $shorten_url;
             $url->details_url = $details_url;
             $url->save();
+
             if ($request->email) {
                 Mail::to($request->email)->send(new UrlGenerated($url));
             }
+
             return true;
         }
 
@@ -94,9 +89,11 @@ class Url extends Model
         $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
         $charactersLength = strlen($characters);
         $randomString = '';
+
         for ($i = 0; $i < $length; $i++) {
             $randomString .= $characters[rand(0, $charactersLength - 1)];
         }
+
         return $randomString;
     }
 
