@@ -6,3 +6,16 @@
     background-position: center;
     background-repeat: no-repeat;
 }
+
+.error {
+    text-align: left;
+}
+
+.link {
+    color: #1b1e21;
+    font-size: 40px;
+}
+
+.visit {
+    font-size: 40px;
+}

@@ -10,10 +10,10 @@
             @if(!empty($errors->get('url')))
                 <div class="alert alert-danger">
                         @foreach($errors->get('url') as $error)
-                           <p style="text-align: left"> {{ $error }} </p>
+                           <p class="error"> {{ $error }} </p>
                         @endforeach
                         @foreach($errors->get('email') as $error)
-                            <p style="text-align: left"> {{ $error }} </p>
+                            <p class="error"> {{ $error }} </p>
                         @endforeach
                 </div>
             @endif

@@ -96,5 +96,4 @@ class Url extends Model
 
         return $randomString;
     }
-
 }
